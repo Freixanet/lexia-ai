@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PanelLeftOpen } from 'lucide-react';
+
 import { ChatMessage, ChatSession } from './types';
 import { generateLexiaResponseStream } from './services/geminiService';
 import { Sidebar } from './components/Sidebar';
@@ -28,7 +28,7 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Create a default session ID if none exists
   const ensureSession = () => {
     if (!currentSessionId) {
@@ -56,10 +56,10 @@ const App: React.FC = () => {
         // Update title based on first user message if it's "Nueva Consulta"
         let title = s.title;
         if (s.title === 'Nueva Consulta' && newMessages.length > 0) {
-            const firstUserMsg = newMessages.find(m => m.role === 'user');
-            if (firstUserMsg) {
-                title = firstUserMsg.text.slice(0, 30) + (firstUserMsg.text.length > 30 ? '...' : '');
-            }
+          const firstUserMsg = newMessages.find(m => m.role === 'user');
+          if (firstUserMsg) {
+            title = firstUserMsg.text.slice(0, 30) + (firstUserMsg.text.length > 30 ? '...' : '');
+          }
         }
         return { ...s, messages: newMessages, title, updatedAt: Date.now() };
       }
@@ -69,7 +69,7 @@ const App: React.FC = () => {
 
   const handleSend = async (text: string, useSearch: boolean) => {
     const session = ensureSession(); // Ensure we have a valid session
-    
+
     // Optimistic user message
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -79,7 +79,7 @@ const App: React.FC = () => {
     };
 
     const updatedMessages = [...(session.messages || []), userMsg];
-    
+
     // Add placeholder AI message
     const aiMsgId = (Date.now() + 1).toString();
     const aiPlaceholder: ChatMessage = {
@@ -94,7 +94,7 @@ const App: React.FC = () => {
     setIsLoading(true);
 
     let accumulatedText = '';
-    
+
     await generateLexiaResponseStream(
       updatedMessages,
       text,
@@ -102,39 +102,39 @@ const App: React.FC = () => {
       useSearch,
       (chunkText, sources) => {
         accumulatedText += chunkText;
-        
+
         setSessions(prev => prev.map(s => {
-            if (s.id === currentSessionId) {
-                const msgs = [...s.messages];
-                // Find the placeholder we added (it's the last one)
-                // Note: In strict React 18, we might need a more robust ID check, 
-                // but since we just added it, it's safe for this demo.
-                const lastMsgIndex = msgs.length - 1;
-                if (lastMsgIndex >= 0) {
-                    msgs[lastMsgIndex] = {
-                        ...msgs[lastMsgIndex],
-                        text: accumulatedText,
-                        sources: sources || msgs[lastMsgIndex].sources // Keep existing sources or update if new ones arrive
-                    };
-                }
-                return { ...s, messages: msgs };
+          if (s.id === currentSessionId) {
+            const msgs = [...s.messages];
+            // Find the placeholder we added (it's the last one)
+            // Note: In strict React 18, we might need a more robust ID check, 
+            // but since we just added it, it's safe for this demo.
+            const lastMsgIndex = msgs.length - 1;
+            if (lastMsgIndex >= 0) {
+              msgs[lastMsgIndex] = {
+                ...msgs[lastMsgIndex],
+                text: accumulatedText,
+                sources: sources || msgs[lastMsgIndex].sources // Keep existing sources or update if new ones arrive
+              };
             }
-            return s;
+            return { ...s, messages: msgs };
+          }
+          return s;
         }));
       }
     );
 
     // Finalize loading state
     setSessions(prev => prev.map(s => {
-        if (s.id === currentSessionId) {
-            const msgs = [...s.messages];
-            const lastMsgIndex = msgs.length - 1;
-             if (lastMsgIndex >= 0) {
-                msgs[lastMsgIndex] = { ...msgs[lastMsgIndex], isStreaming: false };
-             }
-            return { ...s, messages: msgs };
+      if (s.id === currentSessionId) {
+        const msgs = [...s.messages];
+        const lastMsgIndex = msgs.length - 1;
+        if (lastMsgIndex >= 0) {
+          msgs[lastMsgIndex] = { ...msgs[lastMsgIndex], isStreaming: false };
         }
-        return s;
+        return { ...s, messages: msgs };
+      }
+      return s;
     }));
     setIsLoading(false);
   };
@@ -150,8 +150,8 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-[#050505] text-gray-100 overflow-hidden font-sans">
-      <Sidebar 
-        isOpen={isSidebarOpen} 
+      <Sidebar
+        isOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         isCollapsed={isSidebarCollapsed}
         toggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -162,29 +162,19 @@ const App: React.FC = () => {
       />
 
       <div className="flex-1 flex flex-col h-full relative transition-all duration-300">
-        
-        {/* Desktop Sidebar Toggle (Floating) */}
-        {isSidebarCollapsed && (
-          <button
-            onClick={() => setIsSidebarCollapsed(false)}
-            className="absolute top-4 left-4 z-50 p-2 text-lexia-muted hover:text-white bg-[#09090b]/80 hover:bg-[#18181b] backdrop-blur-md border border-lexia-border/50 hover:border-lexia-gold/30 rounded-lg transition-all shadow-lg hidden md:flex items-center justify-center group"
-            title="Abrir barra lateral"
-          >
-            <PanelLeftOpen size={20} className="group-hover:scale-105 transition-transform" />
-          </button>
-        )}
+
 
         {/* Mobile Header */}
         <div className="md:hidden flex items-center h-14 px-4 bg-[#080808] relative">
-          <button 
-            onClick={() => setIsSidebarOpen(true)} 
+          <button
+            onClick={() => setIsSidebarOpen(true)}
             className="text-gray-400 hover:text-white transition-colors p-1 flex items-center justify-center"
             aria-label="Menu"
           >
             {/* Custom 'Two and a half lines' icon */}
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-               <line x1="3" y1="8" x2="21" y2="8" />
-               <line x1="3" y1="16" x2="15" y2="16" />
+              <line x1="3" y1="8" x2="21" y2="8" />
+              <line x1="3" y1="16" x2="15" y2="16" />
             </svg>
           </button>
           <span className="font-serif text-lg text-lexia-gold ml-4 pt-1 leading-none">Lexia</span>
@@ -202,9 +192,9 @@ const App: React.FC = () => {
             <div className="pb-32">
               {/* Disclaimer Header for Chat */}
               <div className="w-full bg-[#111] border-b border-lexia-border/50 py-2 px-4 text-center">
-                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-medium">Simulación de IA Privilegiada y Confidencial</p>
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-medium">Simulación de IA Privilegiada y Confidencial</p>
               </div>
-              
+
               {messages.map((msg) => (
                 <ChatMessageComponent key={msg.id} message={msg} />
               ))}
@@ -215,16 +205,16 @@ const App: React.FC = () => {
 
         {/* Input Area (Sticky) */}
         <div className={`absolute left-0 right-0 z-10 pt-4 pb-6 transition-all duration-500 ease-in-out
-          ${isLanding 
-            ? 'bottom-0 md:top-1/2 md:-translate-y-1/2 md:bottom-auto' 
+          ${isLanding
+            ? 'bottom-0 md:top-1/2 md:-translate-y-1/2 md:bottom-auto'
             : 'bottom-0'
           }
-          ${isLanding 
-            ? 'bg-gradient-to-t from-[#050505] via-[#050505] to-transparent md:bg-none' 
+          ${isLanding
+            ? 'bg-gradient-to-t from-[#050505] via-[#050505] to-transparent md:bg-none'
             : 'bg-gradient-to-t from-[#050505] via-[#050505] to-transparent'
           }
         `}>
-          
+
           {/* Desktop Greeting - Only on Landing */}
           {isLanding && (
             <div className="hidden md:block text-center mb-8 animate-fade-in">
