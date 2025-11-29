@@ -16,7 +16,18 @@ export default async function handler(req, res) {
     }
 
     // 1. Obtener la clave segura del entorno
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    // DEBUG LOGS (Check Vercel Functions logs)
+    console.log("API Key configured:", !!apiKey);
+    if (apiKey) {
+        console.log("API Key length:", apiKey.length);
+        console.log("API Key start:", apiKey.substring(0, 4) + "...");
+    } else {
+        console.error("API Key is MISSING in environment variables!");
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
 
     try {
         // 2. Obtener el mensaje que envía el frontend
