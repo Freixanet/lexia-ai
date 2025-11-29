@@ -50,9 +50,9 @@ const App: React.FC = () => {
     return sessions.find(s => s.id === currentSessionId)?.messages || [];
   };
 
-  const updateCurrentSessionMessages = (newMessages: ChatMessage[]) => {
+  const updateCurrentSessionMessages = (newMessages: ChatMessage[], targetSessionId: string) => {
     setSessions(prev => prev.map(s => {
-      if (s.id === currentSessionId) {
+      if (s.id === targetSessionId) {
         // Update title based on first user message if it's "Nueva Consulta"
         let title = s.title;
         if (s.title === 'Nueva Consulta' && newMessages.length > 0) {
@@ -69,6 +69,7 @@ const App: React.FC = () => {
 
   const handleSend = async (text: string, useSearch: boolean) => {
     const session = ensureSession(); // Ensure we have a valid session
+    const activeSessionId = session.id; // Capture ID immediately
 
     // Optimistic user message
     const userMsg: ChatMessage = {
@@ -90,7 +91,7 @@ const App: React.FC = () => {
       timestamp: Date.now() + 1,
     };
 
-    updateCurrentSessionMessages([...updatedMessages, aiPlaceholder]);
+    updateCurrentSessionMessages([...updatedMessages, aiPlaceholder], activeSessionId);
     setIsLoading(true);
 
     let accumulatedText = '';
@@ -104,17 +105,15 @@ const App: React.FC = () => {
         accumulatedText += chunkText;
 
         setSessions(prev => prev.map(s => {
-          if (s.id === currentSessionId) {
+          if (s.id === activeSessionId) {
             const msgs = [...s.messages];
             // Find the placeholder we added (it's the last one)
-            // Note: In strict React 18, we might need a more robust ID check, 
-            // but since we just added it, it's safe for this demo.
             const lastMsgIndex = msgs.length - 1;
             if (lastMsgIndex >= 0) {
               msgs[lastMsgIndex] = {
                 ...msgs[lastMsgIndex],
                 text: accumulatedText,
-                sources: sources || msgs[lastMsgIndex].sources // Keep existing sources or update if new ones arrive
+                sources: sources || msgs[lastMsgIndex].sources
               };
             }
             return { ...s, messages: msgs };
@@ -126,7 +125,7 @@ const App: React.FC = () => {
 
     // Finalize loading state
     setSessions(prev => prev.map(s => {
-      if (s.id === currentSessionId) {
+      if (s.id === activeSessionId) {
         const msgs = [...s.messages];
         const lastMsgIndex = msgs.length - 1;
         if (lastMsgIndex >= 0) {

@@ -16,7 +16,8 @@ export default async function handler(req, res) {
     }
 
     // 1. Obtener la clave segura del entorno
-    const apiKey = process.env.GEMINI_API_KEY;
+    // TEMPORARY DEBUG: Hardcoded key to verify validity
+    const apiKey = "AIzaSyBWNAYgiuWgMlD0GV5L4YCMIM_Z7pLfLgY";
 
     // DEBUG LOGS (Check Vercel Functions logs)
     console.log("API Key configured:", !!apiKey);
@@ -33,16 +34,32 @@ export default async function handler(req, res) {
         // 2. Obtener el mensaje que envía el frontend
         const { message } = req.body;
 
-        // 3. Llamar a Gemini
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const result = await model.generateContent(message);
-        const response = await result.response;
-        const text = response.text();
+        // 3. Llamar a Gemini con STREAMING
+        // Usamos el modelo más avanzado disponible actualmente en la API estable
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
-        // 4. Devolver la respuesta al frontend
-        res.status(200).json({ text });
+        const result = await model.generateContentStream(message);
+
+        // 4. Configurar headers para streaming
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Transfer-Encoding', 'chunked');
+
+        // 5. Iterar sobre el stream y enviar chunks al cliente
+        for await (const chunk of result.stream) {
+            const chunkText = chunk.text();
+            res.write(chunkText);
+        }
+
+        res.end();
+
     } catch (error) {
         console.error("API Error:", error);
-        res.status(500).json({ error: error.message || 'Error procesando la solicitud' });
+        // Si ya empezamos a enviar datos (headers sent), no podemos enviar JSON de error.
+        // En ese caso, terminamos la respuesta.
+        if (!res.headersSent) {
+            res.status(500).json({ error: error.message || 'Error procesando la solicitud' });
+        } else {
+            res.end();
+        }
     }
 }

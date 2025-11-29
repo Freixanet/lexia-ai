@@ -22,14 +22,19 @@ export const generateLexiaResponseStream = async (
       throw new Error(errorData.error || `API Error: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    if (!response.body) {
+      throw new Error("ReadableStream not supported in this browser.");
+    }
 
-    // Since the serverless function returns the full text at once (no streaming),
-    // we just call onChunk once with the full text.
-    if (data.text) {
-      onChunk(data.text, undefined);
-    } else {
-      onChunk("Error: No response from AI.", undefined);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunkText = decoder.decode(value, { stream: true });
+      onChunk(chunkText, undefined);
     }
 
   } catch (error: any) {
