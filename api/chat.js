@@ -31,7 +31,7 @@ export default async function handler(req, res) {
         // 4. Devolver la respuesta al frontend
         res.status(200).json({ text });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error procesando la solicitud' });
+        console.error("API Error:", error);
+        res.status(500).json({ error: error.message || 'Error procesando la solicitud' });
     }
 }

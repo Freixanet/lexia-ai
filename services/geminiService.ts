@@ -18,7 +18,8 @@ export const generateLexiaResponseStream = async (
     });
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `API Error: ${response.statusText}`);
     }
 
     const data = await response.json();
